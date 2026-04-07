@@ -144,6 +144,7 @@ public final class CryptexFilesystemPatcher: Patcher {
             try FileManager.default.removeItem(at: finalDestination)
         }
         try FileManager.default.moveItem(at: finalFile, to: finalDestination)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: finalDestination.path)
         return (newDmgPath, finalDestination)
     }
     
