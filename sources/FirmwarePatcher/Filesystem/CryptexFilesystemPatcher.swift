@@ -407,6 +407,7 @@ public final class CryptexFilesystemPatcher: Patcher {
         let digestDbPath = tmpDir.appending(path: "digest.db")
         let rootHashPath = tmpDir.appending(path: "root_hash")
         let mtreeRemapPath = tmpDir.appending(path: "mtree_remap.xml")
+        let sealLogPath = tmpDir.appending(path: "seal.log")
         
         // We want to get the nanosecond timestamp of the last modification before the mtree collection.
         // We know that we remove directories in /private/var in removeSpecificSystemFiles last.
@@ -429,12 +430,13 @@ public final class CryptexFilesystemPatcher: Patcher {
 
         try unmount(mount: mount)
         let sealvolume = try identify_apfs_sealvolume()
+        FileManager.default.createFile(atPath: sealLogPath.path, contents: nil)
         _ = try runProcess(sealvolume.path, [
             "-R", mtreeRemapPath.path,
             "-U", digestDbPath.path, // Save digest records
             "-M", rootHashPath.path, // Save root hash
             device
-        ])
+        ], output: sealLogPath)
         return (digestDbPath, rootHashPath)
     }
     
