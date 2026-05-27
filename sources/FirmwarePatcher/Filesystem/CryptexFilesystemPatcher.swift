@@ -15,6 +15,7 @@ import Img4tool
 
 enum ProcessError: Error {
     case failed(Int32, String)
+    case notExecutable(String)
 }
 
 extension Data {
@@ -394,9 +395,16 @@ public final class CryptexFilesystemPatcher: Patcher {
         return im4pPath
     }
     
-    func identify_apfs_sealvolume() throws -> URL {
+    private func identifyApfsSealvolume() throws -> URL {
         let iosVersion = try getProductVersion()
-        return self.vphoneCliDirectory.appending(path: ".tools/apfs_sealvolume_\(iosVersion)")
+        let path = self.vphoneCliDirectory.appending(path: ".tools/apfs_sealvolume_\(iosVersion)")
+        guard FileManager.default.fileExists(atPath: path.path) else {
+            throw FirmwareManifest.ManifestError.fileNotFound(path.path)
+        }
+        guard FileManager.default.isExecutableFile(atPath: path.path) else {
+            throw ProcessError.notExecutable(path.path)
+        }
+        return path
     }
     
     func createDigestAndHash(filesystem: URL, mtree: URL, remap: Bool) throws -> (URL, URL) {
@@ -429,7 +437,7 @@ public final class CryptexFilesystemPatcher: Patcher {
         FileManager.default.createFile(atPath: mtreeRemapPath.path, contents: remapContent.data(using: .utf8))
 
         try unmount(mount: mount)
-        let sealvolume = try identify_apfs_sealvolume()
+        let sealvolume = try identifyApfsSealvolume()
         FileManager.default.createFile(atPath: sealLogPath.path, contents: nil)
         _ = try runProcess(sealvolume.path, [
             "-R", mtreeRemapPath.path,
@@ -623,7 +631,7 @@ public final class CryptexFilesystemPatcher: Patcher {
     }
     
     func getProductVersion() throws -> String {
-        var root = try parsePlist(data: buildManiest)
+        let root = try parsePlist(data: buildManiest)
         guard let productVersion = root["ProductVersion"] as? String else {
             throw FirmwareManifest.ManifestError.missingKey("ProductVersion in BuildManifest")
         }
