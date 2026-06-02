@@ -523,15 +523,13 @@ public final class CryptexFilesystemPatcher: Patcher {
         let (device, mount) = try attachImage(path: filesystem, readonly: true)
         defer { try? detachImage(deviceNode: device) }
         
-        let oldTrustcache = try getTrustcachePath()
-        let oldTrustcachePath = self.restoreDir.appending(path: oldTrustcache)
         let newTrustcachePath = self.restoreDir.appending(path: "Firmware/new.trustcache")
         let tmpDir = try createTmpDir()
         
         let tcContainer = tmpDir.appending(path: "new.trustcache")
         _ = try runProcess("/System/Library/SecurityResearch/usr/bin/cryptexctl", [
             "generate-trust-cache", "--type", "static",
-            "--base-trust-cache", oldTrustcachePath.path,
+            "--restricted-exec-mode-default", "both",
             "--output-file", tcContainer.path,
             mount
         ])
