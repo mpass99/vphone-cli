@@ -115,6 +115,7 @@ public final class CryptexFilesystemPatcher: Patcher {
     func mergeFilesystems() throws -> (URL, URL) {
         let osPath = try getOSFilesystemPath()
         let osDmgPath = try decryptAeaFile(self.restoreDir.appending(path: osPath))
+        defer { try? FileManager.default.removeItem(at: osDmgPath) }
         let tmpDir = try createTmpDir()
         let newDmgPath = tmpDir.appending(path: "new-filesystem.dmg")
         
@@ -568,6 +569,7 @@ public final class CryptexFilesystemPatcher: Patcher {
         } else {
             try decryptAeaFile(self.restoreDir.appending(path: try getSystemOsFilesystemPath()))
         }
+        defer { if !appOS { try? FileManager.default.removeItem(at: osPath) } }
         let (osDevice, osMount) = try attachImage(path: osPath, readonly: true)
         defer { try? detachImage(deviceNode: osDevice) }
         
