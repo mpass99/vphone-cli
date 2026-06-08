@@ -119,7 +119,9 @@ public final class CryptexFilesystemPatcher: Patcher {
         let newDmgPath = tmpDir.appending(path: "new-filesystem.dmg")
         
         print("- Converting OS image")
-        let targetImagePath = tmpDir.appending(path: "disk.dmg")
+        // Resizing is very limited in a temporary directory
+        let targetImagePath = self.restoreDir.appending(path: "disk.dmg")
+        defer { try? FileManager.default.removeItem(at: targetImagePath) }
         do {
             try convertToRawImage(input: osDmgPath, output: targetImagePath)
             let (targetDevice, targetMount) = try attachImage(path: targetImagePath, forceRW: true)
@@ -158,6 +160,9 @@ public final class CryptexFilesystemPatcher: Patcher {
                 try injectLaunchDaemons(targetMount: targetMount, cfwInput: cfwInputPath, vphoned: !noVphoned, cfw: !noBinpack)
                 try patchLaunchdCacheLoader(targetMount: targetMount, cfwInput: cfwInputPath)
             }
+            
+            print("- Add cryptexctl")
+            try addCryptexctl(targetMount: targetMount)
         }
         
         print("- Finalizing merged image")
@@ -230,6 +235,17 @@ public final class CryptexFilesystemPatcher: Patcher {
         ])
         try FileManager.default.moveItem(at: launchdPath, to: launchdOgPath)
         _ = try runProcess("/bin/chmod", ["0644", launchdOgPath.path])
+    }
+    
+    func addCryptexctl(targetMount: String) throws {
+        let cryptexctl = self.vphoneCliDirectory.appending(path: ".tools/cryptexctl")
+        guard FileManager.default.fileExists(atPath: cryptexctl.path) else {
+            print("cryptexctl not present")
+            return
+        }
+        
+        let target = URL(fileURLWithPath: targetMount).appending(path: "/usr/bin/cryptexctl")
+        try FileManager.default.copyItem(atPath: cryptexctl.path, toPath: target.path)
     }
     
     func addExtraServices(targetMount: String, cfwInput: URL) throws {

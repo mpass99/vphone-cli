@@ -7,6 +7,7 @@ import Virtualization
 
 
 enum CLIError: Error {
+    case CryptexError(String)
     case RestoreError(String)
 }
 
@@ -14,7 +15,7 @@ struct VPhoneCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "vphone-cli",
         abstract: "Boot a virtual iPhone or patch firmware with the Swift pipeline",
-        subcommands: [VPhoneBootCLI.self, VPhoneRestoreCLI.self, PatchFirmwareCLI.self, PatchComponentCLI.self],
+        subcommands: [VPhoneBootCLI.self, VPhoneRestoreCLI.self, PatchFirmwareCLI.self, PatchComponentCLI.self, CryptexCLI.self],
         defaultSubcommand: VPhoneBootCLI.self
     )
 }
@@ -485,5 +486,34 @@ struct PatchComponentCLI: ParsableCommand {
             print("[patch-component] applied \(count) patches for \(component.rawValue)")
             print("[patch-component] wrote patched payload to \(output.path)")
         }
+    }
+}
+
+struct CryptexCLI: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "cryptex",
+        abstract: "Configure the use of Cryptexes for your virtual iPhone",
+        subcommands: [CryptexCreateCLI.self]
+    )
+}
+
+struct CryptexCreateCLI: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "create",
+        abstract: "Create a cryptex to your virtual iPhone"
+    )
+    
+    @Option(name: [.customLong("source"), .customShort("s")],
+            help: "The source for compiling the Cryptex. Required.")
+    var path: String
+    
+    @Option(name: [.customLong("variant"), .customShort("v")],
+            help: "The variant of the referenced Cryptex (research, release, ...). Required.")
+    var variant: String
+
+    mutating func run() throws {
+        print("Creating cryptex")
+        let path = try Cryptex.createCryptex(source: path, name: variant)
+        print("Created cryptex at \(path)")
     }
 }
