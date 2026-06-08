@@ -100,6 +100,7 @@ public final class CryptexFilesystemPatcher: Patcher {
         // update trustcache, metadata, root_hash path
         let updatedManifest = try setUpdatedComponentsInManifest(filesystem: aeaImage, trustcache: trustcachePath, metadata: metadataPath, rootHash: rootHashContainer)
         rebuiltData = try serializePayload(updatedManifest)
+        try setUpdatedComponentsInRestorePlist(filesystem: aeaImage)
         
         return 1
     }
@@ -568,6 +569,19 @@ public final class CryptexFilesystemPatcher: Patcher {
             format: .xml,
             options: 0
         )
+    }
+    
+    func setUpdatedComponentsInRestorePlist(filesystem: URL) throws {
+        let path = self.restoreDir.appending(path: "Restore.plist")
+        let data = try Data.init(contentsOf: path)
+        guard let pathSuffix = relativePath(from: filesystem, base: self.restoreDir.appendingPathComponent("", isDirectory: true)) else {
+            throw FirmwareManifest.ManifestError.fileNotFound("path suffix for \(filesystem)")
+        }
+        var root = try parsePlist(data: data)
+        let newdict: PlistDict = [ pathSuffix: "APFS" ]
+        root["SystemRestoreImageFileSystems"] = newdict
+        let newData = try serializePayload(root)
+        try newData.write(to: path)
     }
     
     func setUpdatedComponentsInManifest(filesystem: URL, trustcache: URL, metadata: URL, rootHash: URL) throws -> PlistDict {
