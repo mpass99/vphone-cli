@@ -524,6 +524,7 @@
 		<string>AppleSPUHIDDeviceUserClient</string>
 		<string>AppleSPUHIDDriverUserClient</string>
 		<string>AppleUSBHostDeviceUserClient</string>
+		<string>AppleVideoToolboxParavirtualizationUserClient</string>
 		<string>AppleVirtIONeuralEngineDeviceUserClient</string>
 		<string>H11ANEInDirectPathClient</string>
 		<string>IOAVControllerConcreteUserClient</string>
