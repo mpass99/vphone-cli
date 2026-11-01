@@ -520,9 +520,11 @@
 		<string>AppleHPMUserClient</string>
 		<string>AppleJPEGDriverUserClient</string>
 		<string>ApplePPMUserClient</string>
+		<string>AppleParavirtDeviceUserClient</string>
 		<string>AppleSPUHIDDeviceUserClient</string>
 		<string>AppleSPUHIDDriverUserClient</string>
 		<string>AppleUSBHostDeviceUserClient</string>
+		<string>AppleVirtIONeuralEngineDeviceUserClient</string>
 		<string>H11ANEInDirectPathClient</string>
 		<string>IOAVControllerConcreteUserClient</string>
 		<string>IOAccelContext</string>
@@ -539,6 +541,7 @@
 		<string>IOMobileFramebufferUserClient</string>
 		<string>IOReportUserClient</string>
 		<string>IOSurfaceAcceleratorClient</string>
+		<string>IOSurfaceAcceleratorParavirtClient</string>
 		<string>IOSurfaceRootUserClient</string>
 		<string>RootDomainUserClient</string>
 	</array>

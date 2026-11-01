@@ -3390,6 +3390,47 @@ override after `udid.set` and after a reboot, and the guest's own after
 `udid.clear`. Details and the measurements are in
 `Research/Guest/xcode_install_signature_gate.md`, "The host sees it too".
 
+## vphoned paravirtual user-client entitlements (2026-11-01)
+
+No binary change. `VPhoneDaemon.entitlements` adds three classes to
+`com.apple.security.iokit-user-client-class`, each the research board's
+counterpart of a hardware class vphoned already lists:
+
+| Added | Counterpart already listed | An 18.6 binary that lists both |
+| --- | --- | --- |
+| `AppleParavirtDeviceUserClient` (GPU) | `AGXDeviceUserClient`, `IOGPUDeviceUserClient` | `Setup.app/Setup` |
+| `AppleVirtIONeuralEngineDeviceUserClient` | `H11ANEInDirectPathClient` | `Spotlight.app/Spotlight` and ten others |
+| `IOSurfaceAcceleratorParavirtClient` (scaler) | `IOSurfaceAcceleratorClient` | none; `backboardd` holds it as an exception |
+
+The platform sandbox profile lets an unsandboxed process open an IOKit user
+client only when its `iokit-user-client-class` or
+`exception.iokit-user-client-class` entitlement names the class. vphoned named
+only the hardware classes, so on the `minimal` preset, which has none of
+`kernel-boot-iouc_macf_gate`, `kernel-boot-iouc_sandbox_gate` and
+`kernel-cfw-paravirt_user_clients`, a 26.5 guest logged `IOUC
+IOSurfaceAcceleratorParavirtClient failed MACF in process pid …, vphoned`.
+Which call opened it was not traced. vphoned captures and scales the screen
+through icli (`_UICreateScreenUIImage`, `CARenderServerRenderDisplay`, JPEG
+encoding), and icli's OCR and screen description use Metal and Vision, which
+reach the GPU and the Neural Engine. The `minimal` merge copies vphoned with
+the signature the bundle build gives it and rebuilds the static trust cache
+over the result, so the new cdhash is trusted. The `standard` preset opens
+these classes in the kernel and gains nothing from the entries; on a real
+device the classes do not exist.
+
+Not handled: Apple's own binaries. The same 26.5 boot logged `IOUC
+AppleVideoToolboxParavirtualizationUserClient failed MACF … Preferences`.
+Preferences in 18.6, like 73 of the 74 18.6 binaries that list
+`AGXDeviceUserClient`, lists no paravirtual class. Signing those again with
+the counterparts added would change Apple binaries, so the guest would no
+longer match a device's signatures. `VPhoneSigner` also leaves the
+resource-seal slot of an app's main executable empty, and the list of binaries
+would differ from one iOS version to the next. `callservicesd` and `nearbyd`,
+which are refused `AppleVirtIONeuralEngineDeviceUserClient`, run under sandbox
+profiles of their own, which an entitlement does not change.
+
+Not yet observed on a guest.
+
 ## vphoned launchd service entitlements (2026-10-20)
 
 `VPhoneDaemon.entitlements` adds `com.apple.private.xpc.service-configure`
